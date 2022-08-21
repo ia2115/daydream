@@ -9,6 +9,15 @@ echo "Please enter the install path (e.g. /home/bbs)"
 read INSTALL_PATH
 echo "Do you have the bbs and bbsadmin user? (type YES or NO)"
 ADD_USERS=0
+
+platform='unknown'
+unamestr=$(uname)
+if [ "$unamestr" = 'Linux' ]; then
+   platform='linux'
+elif [ "$unamestr" = 'FreeBSD' ]; then
+   platform='freebsd'
+fi
+
 while [ true ];
 do
   read INPUT
@@ -31,18 +40,33 @@ then
   echo "The system will now in 5 seconds create the bbs user,"
   echo "bbsadmin, zipcheck users (and groups). Press Ctrl-C to abort"
   sleep 5
-  groupadd zipcheck
-  useradd -g zipcheck -s /bin/false zipcheck
-  groupadd bbs
-  useradd -d $INSTALL_PATH -m -G zipcheck -g bbs bbsadmin
-  echo "Please type the password for your bbs administrator user"
-  passwd bbsadmin
-  useradd -d $INSTALL_PATH -G zipcheck -g bbs -s /bin/false bbs
-  echo "Please type the password for your bbs user (used for ssh login to"
-  echo "the BBS)"
-  passwd bbs
-  chown bbsadmin:bbs $INSTALL_PATH
-  chmod 750 $INSTALL_PATH
+  if [ "$platform" = 'linux' ]; then
+    groupadd zipcheck
+    useradd -g zipcheck -s /bin/false zipcheck
+    groupadd bbs
+    useradd -d $INSTALL_PATH -m -G zipcheck -g bbs bbsadmin
+    echo "Please type the password for your bbs administrator user"
+    passwd bbsadmin
+    useradd -d $INSTALL_PATH -G zipcheck -g bbs -s /bin/false bbs
+    echo "Please type the password for your bbs user (uned for ssh login to"
+    echo "the BBS)"
+    passwd bbs
+    chown bbsadmin:bbs $INSTALL_PATH
+    chmod 750 $INSTALL_PATH
+  elif [ "$platform" = 'freebsd' ]; then
+    pw groupadd zipcheck 
+    pw user add -n zipcheck -G zipcheck -s /bin/false
+    pw groupadd bbs
+    pw user add -n bbsadmin -G bbs,zipcheck -d $INSTALL_PATH -m
+    echo "Please type the password for your bbs administrator user"
+    passwd bbsadmin
+    pw user add -n bbs -G bbs,zipcheck -d $INSTALL_PATH -s /bin/false
+    echo "Please type the password for your bbs user (uned for ssh login to"
+    echo "the BBS)"
+    passwd bbs
+    chown bbsadmin:bbs $INSTALL_PATH
+    chmod 750 $INSTALL_PATH
+  fi
 fi
 
 echo "Should we install the data files? (only for new installations)"
